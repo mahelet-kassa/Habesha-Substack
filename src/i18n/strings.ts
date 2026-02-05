@@ -8,6 +8,8 @@ export const uiText = {
     },
     actions: {
       startWriting: "Start writing",
+      signIn: "Sign in",
+      createAccount: "Create account",
       subscribe: "Subscribe",
       light: "Light",
       dark: "Dark",
@@ -38,6 +40,8 @@ export const uiText = {
     },
     actions: {
       startWriting: "ጀምር ጻፍ",
+      signIn: "ግባ",
+      createAccount: "መለያ ፍጠር",
       subscribe: "ይመዝገቡ",
       light: "ብርሃን",
       dark: "ጨለማ",

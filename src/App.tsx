@@ -7,6 +7,7 @@ import ProfilePage from "./pages/ProfilePage";
 import SubscribePage from "./pages/SubscribePage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import SearchPage from "./pages/SearchPage";
+import AuthPage from "./pages/AuthPage";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/editor" element={<EditorPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/search" element={<SearchPage />} />
+        <Route path="/auth" element={<AuthPage />} />
         <Route path="/subscribe/:authorHandle" element={<SubscribePage />} />
         <Route path="/@:authorHandle/:postSlug" element={<PostPage />} />
         <Route path="/@:authorHandle" element={<ProfilePage />} />

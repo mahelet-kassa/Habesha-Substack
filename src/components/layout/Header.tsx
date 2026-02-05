@@ -37,6 +37,12 @@ export default function Header() {
           </NavLink>
         </nav>
         <div style={{ display: "flex", gap: "0.6rem", alignItems: "center" }}>
+          <Link to="/auth" className="btn btn-outline">
+            {t.actions.signIn}
+          </Link>
+          <Link to="/auth?mode=signup" className="btn btn-outline">
+            {t.actions.createAccount}
+          </Link>
           <button
             className="btn btn-outline"
             onClick={() => setLanguage(language === "en" ? "am" : "en")}
