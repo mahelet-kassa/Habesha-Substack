@@ -33,7 +33,7 @@ export type Post = {
   readingTimeMinutes: number;
   coverImageUrl: string;
   excerpt: string;
-  visibility: "free" | "paid";
+  visibility: "free" | "paid" | "teaser";
   body: string;
 };
 
