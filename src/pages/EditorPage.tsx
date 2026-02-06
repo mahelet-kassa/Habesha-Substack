@@ -4,13 +4,13 @@ import EditorToolbar from "../components/ui/EditorToolbar";
 import { useLanguage } from "../state/LanguageContext";
 import { useAuth } from "../state/AuthContext";
 import { uiText } from "../i18n/strings";
-import { createPost, publishPost } from "../services/posts";
+import { createPost } from "../services/posts";
 
 type Visibility = "free" | "paid" | "teaser";
 
 export default function EditorPage() {
   const { language } = useLanguage();
-  const { user, profile } = useAuth();
+  const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const t = uiText[language];
 
@@ -25,6 +25,17 @@ export default function EditorPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Show loading state while auth is resolving
+  if (loading) {
+    return (
+      <section className="container section">
+        <div className="card">
+          <p>Loading...</p>
+        </div>
+      </section>
+    );
+  }
 
   if (!user) {
     return (
@@ -46,7 +57,7 @@ export default function EditorPage() {
     setError(null);
     setSuccess(null);
 
-    const { data, error: saveError } = await createPost({
+    const { error: saveError } = await createPost({
       author_id: user.id,
       title_en: titleEn || "Untitled",
       title_am: titleAm || "ርዕስ የለም",
@@ -62,21 +73,31 @@ export default function EditorPage() {
     setSaving(false);
     if (saveError) {
       setError(saveError.message);
+      alert("Save draft failed: " + saveError.message);
     } else {
       setSuccess("Draft saved!");
     }
   }
 
   async function handlePublish() {
-    if (!user) return;
+    alert("Publish clicked! Checking state...");
+
+    if (!user) {
+      alert("No user found - please sign in");
+      return;
+    }
 
     if (!profile) {
-      setError("Profile not found. Please sign out and sign up again.");
+      const msg = "Profile not found. Please sign out and sign up again with a name and handle.";
+      setError(msg);
+      alert(msg);
       return;
     }
 
     if (!titleEn && !titleAm) {
-      setError("Please enter a title in at least one language.");
+      const msg = "Please enter a title in at least one language.";
+      setError(msg);
+      alert(msg);
       return;
     }
 
@@ -85,7 +106,6 @@ export default function EditorPage() {
     setSuccess(null);
 
     try {
-      // Create and publish in one step
       const { data, error: createError } = await createPost({
         author_id: user.id,
         title_en: titleEn || "Untitled",
@@ -99,22 +119,31 @@ export default function EditorPage() {
         scheduled_at: scheduledAt || null,
       });
 
+      setSaving(false);
+
       if (createError) {
+        const msg = `Failed to publish: ${createError.message}`;
         console.error("Publish error:", createError);
-        setSaving(false);
-        setError(`Failed to publish: ${createError.message}`);
+        setError(msg);
+        alert(msg);
         return;
       }
 
       if (data) {
-        setSaving(false);
         setSuccess("Published successfully!");
+        alert("Published successfully! Redirecting...");
         navigate(`/@${profile.handle}/${data.slug}`);
+      } else {
+        const msg = "Post was created but no data returned. Check Supabase dashboard.";
+        setError(msg);
+        alert(msg);
       }
     } catch (err: any) {
-      console.error("Unexpected error:", err);
       setSaving(false);
-      setError(`Unexpected error: ${err.message || err}`);
+      const msg = `Unexpected error: ${err.message || String(err)}`;
+      console.error("Unexpected publish error:", err);
+      setError(msg);
+      alert(msg);
     }
   }
 
@@ -125,13 +154,18 @@ export default function EditorPage() {
         Drafts autosave, support bilingual writing, embeds, and subscriber-only sections.
       </p>
 
+      {/* Debug info */}
+      <div style={{ fontSize: "0.8rem", padding: "0.5rem", background: "var(--color-surface)", borderRadius: "8px", marginBottom: "1rem" }}>
+        <strong>Debug:</strong> user={user ? user.email : "none"} | profile={profile ? profile.handle : "none"} | supabase={import.meta.env.VITE_SUPABASE_URL ? "connected" : "NO ENV VARS"}
+      </div>
+
       {error && (
-        <div className="card" style={{ background: "var(--color-error)", color: "white", marginBottom: "1rem" }}>
-          {error}
+        <div className="card" style={{ background: "#c0392b", color: "white", marginBottom: "1rem", padding: "1rem" }}>
+          <strong>Error:</strong> {error}
         </div>
       )}
       {success && (
-        <div className="card" style={{ background: "var(--color-success)", color: "white", marginBottom: "1rem" }}>
+        <div className="card" style={{ background: "#27ae60", color: "white", marginBottom: "1rem", padding: "1rem" }}>
           {success}
         </div>
       )}
@@ -229,7 +263,7 @@ export default function EditorPage() {
           <button
             className="btn btn-accent"
             onClick={handlePublish}
-            disabled={saving || (!titleEn && !titleAm)}
+            disabled={saving}
           >
             {saving ? "Publishing..." : t.actions.publish}
           </button>
