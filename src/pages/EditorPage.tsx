@@ -69,43 +69,52 @@ export default function EditorPage() {
 
   async function handlePublish() {
     if (!user) return;
+
+    if (!profile) {
+      setError("Profile not found. Please sign out and sign up again.");
+      return;
+    }
+
+    if (!titleEn && !titleAm) {
+      setError("Please enter a title in at least one language.");
+      return;
+    }
+
     setSaving(true);
     setError(null);
     setSuccess(null);
 
-    // First create the post
-    const { data, error: createError } = await createPost({
-      author_id: user.id,
-      title_en: titleEn || "Untitled",
-      title_am: titleAm || "ርዕስ የለም",
-      subtitle_en: subtitleEn || null,
-      subtitle_am: subtitleAm || null,
-      content_en: contentEn,
-      content_am: contentAm,
-      visibility,
-      published: false,
-      scheduled_at: scheduledAt || null,
-    });
+    try {
+      // Create and publish in one step
+      const { data, error: createError } = await createPost({
+        author_id: user.id,
+        title_en: titleEn || "Untitled",
+        title_am: titleAm || "ርዕስ የለም",
+        subtitle_en: subtitleEn || null,
+        subtitle_am: subtitleAm || null,
+        content_en: contentEn,
+        content_am: contentAm,
+        visibility,
+        published: true,
+        scheduled_at: scheduledAt || null,
+      });
 
-    if (createError) {
-      setSaving(false);
-      setError(createError.message);
-      return;
-    }
-
-    // Then publish it
-    if (data) {
-      const { error: publishError } = await publishPost(data.id);
-      setSaving(false);
-      if (publishError) {
-        setError(publishError.message);
-      } else {
-        setSuccess("Published successfully!");
-        // Navigate to the published post
-        if (profile) {
-          navigate(`/@${profile.handle}/${data.slug}`);
-        }
+      if (createError) {
+        console.error("Publish error:", createError);
+        setSaving(false);
+        setError(`Failed to publish: ${createError.message}`);
+        return;
       }
+
+      if (data) {
+        setSaving(false);
+        setSuccess("Published successfully!");
+        navigate(`/@${profile.handle}/${data.slug}`);
+      }
+    } catch (err: any) {
+      console.error("Unexpected error:", err);
+      setSaving(false);
+      setError(`Unexpected error: ${err.message || err}`);
     }
   }
 

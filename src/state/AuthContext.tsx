@@ -67,13 +67,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Create profile after signup
     if (data.user) {
+      const cleanHandle = handle.toLowerCase().replace(/[^a-z0-9]/g, "") || `user${Date.now()}`;
       const { error: profileError } = await supabase.from("profiles").insert({
         id: data.user.id,
         email,
         display_name: displayName,
-        handle: handle.toLowerCase().replace(/[^a-z0-9]/g, ""),
+        handle: cleanHandle,
       });
-      if (profileError) return { error: profileError };
+      if (profileError) {
+        console.error("Profile creation error:", profileError);
+        return { error: profileError };
+      }
+      // Fetch the new profile immediately
+      await fetchProfile(data.user.id);
     }
 
     return { error: null };

@@ -2,22 +2,42 @@ import { supabase } from "../lib/supabase";
 import type { Post, PostInsert } from "../types/database";
 
 function generateSlug(title: string): string {
-  return title
+  // Try to extract ASCII characters first
+  const asciiSlug = title
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .slice(0, 60);
+
+  // If the title is non-Latin (e.g. Amharic), generate a timestamp-based slug
+  if (!asciiSlug || asciiSlug === "-") {
+    return `post-${Date.now()}`;
+  }
+
+  // Append a short timestamp to avoid duplicates
+  return `${asciiSlug}-${Date.now().toString(36)}`;
 }
 
 export async function createPost(post: Omit<PostInsert, "slug">): Promise<{ data: Post | null; error: Error | null }> {
   const slug = generateSlug(post.title_en || post.title_am);
   
+  const insertData = {
+    ...post,
+    slug,
+    // If publishing immediately, set published_at
+    published_at: post.published ? new Date().toISOString() : null,
+  };
+
   const { data, error } = await supabase
     .from("posts")
-    .insert({ ...post, slug })
+    .insert(insertData)
     .select()
     .single();
+
+  if (error) {
+    console.error("createPost error:", error);
+  }
 
   return { data, error };
 }
